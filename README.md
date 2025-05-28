@@ -1,10 +1,7 @@
 # auto_install_opengrok
 
 ### 安装opengrok（默认安装到： ~/programs/opengrok）
-```
-chmod u+x install_opengrok.sh
-./install_opengrok.sh
-```
+`./install_opengrok.sh`
 
 ### 卸载opengrok
 `./install_opengrok.sh -r`
