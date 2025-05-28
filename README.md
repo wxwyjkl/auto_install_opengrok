@@ -9,4 +9,4 @@
 ### 添加源码和更新源码索引参考脚本提示
 
 ### 安装完成访问opengrok
-http://localhost:8080/source/"
+http://localhost:8080/source/
