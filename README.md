@@ -1,7 +1,10 @@
-# auto_install_opengrok
+# Opengrok安装和卸载
 
 ### 安装opengrok（默认安装到： ~/programs/opengrok）
 `./install_opengrok.sh`
+
+### 安装opengrok，指定安装目录
+`./install_opengrok.sh -i <指定安装目录>`
 
 ### 卸载opengrok
 `./install_opengrok.sh -r`

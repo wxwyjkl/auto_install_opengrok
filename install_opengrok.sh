@@ -53,6 +53,8 @@ function uninstall_ctags() {
 
 function install_tomcat() {
     log "Install tomcat ($TOMCAT_VERSION)"
+    mkdir -p $TOMCAT_INSTALL_DIR
+    ls -al $TOMCAT_INSTALL_DIR
 
     sudo systemctl status tomcat --no-pager 2>&1>/dev/null
     if [ $? -eq 0 ];then
@@ -91,12 +93,6 @@ function install_tomcat() {
     sudo systemctl daemon-reload
     logi "Startup tomcat service..."
     sudo systemctl restart tomcat
-    # if [ $? -eq 1 ];then
-    #     logw "Maybe tomcat service is masked! Unmask and try restart."
-    #     sudo systemctl unmask tomcat
-    #     sudo systemctl daemon-reload
-    #     sudo systemctl restart tomcat
-    # fi 
     echo
     sudo systemctl status tomcat --no-pager
     echo
@@ -137,6 +133,10 @@ function uninstall_tomcat() {
 }
 
 function install_opengrok() {
+    mkdir ~/.auto_install_opengrok
+    echo $OPENGROK_INSTALL_DIR > ~/.auto_install_opengrok/install_opengrok_dir
+    echo $TOMCAT_INSTALL_DIR > ~/.auto_install_opengrok/install_tomcat_dir
+
     install_openjdk
     install_ctags
     install_tomcat
@@ -151,7 +151,7 @@ function install_opengrok() {
             rm -rf $OPENGROK_INSTALL_DIR/opengrok
         fi
     fi
-
+   
     mkdir -p $OPENGROK_INSTALL_DIR/opengrok/{src,data,dist,etc,log}
     logi "Install opengrok to "$OPENGROK_INSTALL_DIR/opengrok
     tar -C $OPENGROK_INSTALL_DIR/opengrok/dist --strip-components=1 -xzf $DOWNLOAD_DIR/opengrok-${OPENGROK_VERSION}.tar.gz
@@ -188,19 +188,22 @@ function install_opengrok() {
     logi "Run: $opengrok_index_cmd"
     $opengrok_index_cmd
 
+    echo
+    echo "=========================="
     logi "使用说明："
+    echo "=========================="
     echo
     echo "1. 添加源码（创建链接目录即可）"
-    echo "  例如： ln -s <源码路径> $OPENGROK_INSTALL_DIR/opengrok/src"
+    echo -e "\033[32m    ln -s <源码路径> $OPENGROK_INSTALL_DIR/opengrok/src\033[0m"
     echo
-    echo "2. 执行opengrok-indexer命令更新源码索引（android源码较大，可能需要等待30分钟以上），两种方式:"
+    echo "2. 执行opengrok-indexer命令更新源码索引（android源码较大，可能需要等待30分钟以上），两种方式均可:"
     echo
-    echo "1) Opengrok-tools命令（需要先进入python vevn环境）:"
-    echo "  $ source $OPENGROK_INSTALL_DIR/opengrok/dist/tools/opengrok-tools/bin/activate"
-    echo "  $ $opengrok_index_cmd"
-    echo "  $ deactivate"
+    echo "  1) Opengrok-tools命令（需要先进入python vevn环境）:"
+    echo -e "\033[32m    source $OPENGROK_INSTALL_DIR/opengrok/dist/tools/opengrok-tools/bin/activate\033[0m"
+    echo -e "\033[32m    $opengrok_index_cmd\033[0m"
+    echo -e "\033[32m    deactivate\033[0m"
     echo
-    echo "2) Java命令："
+    echo "  2) Java命令："
     java_index_cmd="java \
         -Xmx8g \
         -Djava.util.logging.config.file=$OPENGROK_INSTALL_DIR/opengrok/etc/logging.properties \
@@ -212,7 +215,7 @@ function install_opengrok() {
         -U "http://localhost:8080/source" \
         -P --progress -v"
     java_index_cmd=`echo $java_index_cmd | tr -s ' '`
-    echo "  $ $java_index_cmd"
+    echo -e "\033[32m    $java_index_cmd\033[0m"
     echo
     echo "查看opengrok工具使用说明："
     echo "  $ java -jar $OPENGROK_INSTALL_DIR/opengrok/dist/lib/opengrok.jar -h"
@@ -224,6 +227,11 @@ function install_opengrok() {
 
 function uninstall_opengrok() {
     log "Uninstall opengrok."
+
+    OPENGROK_INSTALL_DIR=`cat ~/.auto_install_opengrok/install_opengrok_dir`
+    TOMCAT_INSTALL_DIR=`cat ~/.auto_install_opengrok/install_tomcat_dir`
+    rm -rf ~/.auto_install_opengrok
+
     logi "Delete opengrok install dir: "$OPENGROK_INSTALL_DIR/opengrok
     sudo rm -rf $OPENGROK_INSTALL_DIR/opengrok
     logi "Delete tomcat opengrok war: "$TOMCAT_INSTALL_DIR/tomcat/webapps/source.war
