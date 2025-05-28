@@ -1,7 +1,41 @@
 source common.sh
 
+OPENJDK_VERSION=22
+
+TOMCAT_VERSION=10.1.41
+# Ubuntu24.10不支持opengrok最新版本1.13.24，会在访问http://localhost:8080/source时报404
+OPENGROK_VERSION=1.12.28
+
+DOWNLOAD_DIR=./downloads
+
+OPENGROK_INSTALL_DIR=~/programs
+TOMCAT_INSTALL_DIR=~/programs
+TOMCAT_USER=$USER
+
+for arg in "$@"; do
+  case $arg in
+    -r)
+      uninstall=true
+      shift
+      ;;
+    -i)
+      shift
+      OPENGROK_INSTALL_DIR=$1
+      TOMCAT_INSTALL_DIR=$1
+      ;;
+    -h)
+      logi "说明："
+
+      exit 0
+  esac
+done
+
 #=====================
 # Install opengrok
+
+function install_openjdk() {
+    sudo apt install openjdk-$OPENJDK_VERSION-jdk
+}
 
 # 安装ctags，作用主要是扫描指定的源文件，找出其中所包含的语法元素，并将找到的相关内容记录下来。
 function install_ctags() {
@@ -57,6 +91,12 @@ function install_tomcat() {
     sudo systemctl daemon-reload
     logi "Startup tomcat service..."
     sudo systemctl restart tomcat
+    # if [ $? -eq 1 ];then
+    #     logw "Maybe tomcat service is masked! Unmask and try restart."
+    #     sudo systemctl unmask tomcat
+    #     sudo systemctl daemon-reload
+    #     sudo systemctl restart tomcat
+    # fi 
     echo
     sudo systemctl status tomcat --no-pager
     echo
@@ -97,6 +137,7 @@ function uninstall_tomcat() {
 }
 
 function install_opengrok() {
+    install_openjdk
     install_ctags
     install_tomcat
 
@@ -147,16 +188,19 @@ function install_opengrok() {
     logi "Run: $opengrok_index_cmd"
     $opengrok_index_cmd
 
-    logi "命令说明："
+    logi "使用说明："
     echo
-    echo "添加源码后（创建链接目录即可），执行opengrok-indexer命令进行更新，两种方式:"
+    echo "1. 添加源码（创建链接目录即可）"
+    echo "  例如： ln -s <源码路径> $OPENGROK_INSTALL_DIR/opengrok/src"
     echo
-    echo "1.Opengrok-tools命令（需要先进入python vevn环境）:"
+    echo "2. 执行opengrok-indexer命令更新源码索引（android源码较大，可能需要等待30分钟以上），两种方式:"
+    echo
+    echo "1) Opengrok-tools命令（需要先进入python vevn环境）:"
     echo "  $ source $OPENGROK_INSTALL_DIR/opengrok/dist/tools/opengrok-tools/bin/activate"
     echo "  $ $opengrok_index_cmd"
     echo "  $ deactivate"
     echo
-    echo "2.Java命令："
+    echo "2) Java命令："
     java_index_cmd="java \
         -Xmx8g \
         -Djava.util.logging.config.file=$OPENGROK_INSTALL_DIR/opengrok/etc/logging.properties \
@@ -172,12 +216,16 @@ function install_opengrok() {
     echo
     echo "查看opengrok工具使用说明："
     echo "  $ java -jar $OPENGROK_INSTALL_DIR/opengrok/dist/lib/opengrok.jar -h"
+    echo
+    echo "3. 使用浏览器访问本地opengrok服务： http://localhost:8080/source/"
+    echo
+    echo "注意：每次代码有变动时都需要执行第2步的命令来更新索引，否则opengrok上显示的仍然是修改前的代码，可以考虑配置一个定时任务来更新代码索引，对于Android代码，由于更新索引耗时比较久，建议每日凌晨定时更新即可。"
 }
 
 function uninstall_opengrok() {
     log "Uninstall opengrok."
-    logi "Delete opengrok install dir: "$INSTALL_DIR/opengrok
-    sudo rm -rf $INSTALL_DIR/opengrok
+    logi "Delete opengrok install dir: "$OPENGROK_INSTALL_DIR/opengrok
+    sudo rm -rf $OPENGROK_INSTALL_DIR/opengrok
     logi "Delete tomcat opengrok war: "$TOMCAT_INSTALL_DIR/tomcat/webapps/source.war
     sudo rm -rf $TOMCAT_INSTALL_DIR/tomcat/webapps/source.war
     sudo rm -rf $TOMCAT_INSTALL_DIR/tomcat/webapps/source
@@ -185,3 +233,10 @@ function uninstall_opengrok() {
     uninstall_tomcat
     uninstall_ctags
 }
+
+
+if [ "$uninstall" == "true" ];then
+    uninstall_opengrok
+else
+    install_opengrok
+fi

@@ -1,0 +1,25 @@
+[Unit]
+Description=Tomcat
+After=network.target
+
+[Service]
+Type=forking
+
+User=$USER
+Group=$GROUP
+
+Environment="JAVA_HOME=/usr/lib/jvm/java-$OPENJDK_VERSION-openjdk-amd64"
+Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom"
+Environment="CATALINA_BASE=$TOMCAT_INSTALL_DIR/tomcat"
+Environment="CATALINA_HOME=$TOMCAT_INSTALL_DIR/tomcat"
+Environment="CATALINA_PID=$TOMCAT_INSTALL_DIR/tomcat/temp/tomcat.pid"
+Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+
+ExecStart=$TOMCAT_INSTALL_DIR/tomcat/bin/startup.sh
+ExecStop=$TOMCAT_INSTALL_DIR/tomcat/bin/shutdown.sh
+
+RestartSec=10
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
