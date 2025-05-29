@@ -54,7 +54,6 @@ function uninstall_ctags() {
 function install_tomcat() {
     log "Install tomcat ($TOMCAT_VERSION)"
     mkdir -p $TOMCAT_INSTALL_DIR
-    ls -al $TOMCAT_INSTALL_DIR
 
     sudo systemctl status tomcat --no-pager 2>&1>/dev/null
     if [ $? -eq 0 ];then
